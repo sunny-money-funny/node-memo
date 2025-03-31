@@ -6,12 +6,13 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-// RDS 연결 설정
+require("dotenv").config(); // dotenv 설정을 불러옵니다
+
 const dbConfig = {
-  host: "sunny-hancom-db.c10ugwk44bhm.ap-northeast-2.rds.amazonaws.com", // RDS 엔드포인트
-  user: "admin", // RDS 마스터 사용자 이름
-  password: "ilovecroissant!1", // RDS 마스터 비밀번호
-  database: "memo", // 사용할 데이터베이스 이름
+  host: process.env.DB_HOST, // .env 파일에서 불러온 RDS 엔드포인트
+  user: process.env.DB_USER, // .env 파일에서 불러온 RDS 사용자 이름
+  password: process.env.DB_PASSWORD, // .env 파일에서 불러온 RDS 비밀번호
+  database: process.env.DB_DATABASE, // .env 파일에서 불러온 데이터베이스 이름
 };
 
 // 연결 풀 생성
@@ -58,6 +59,22 @@ async function addMemo() {
 // 메모 읽기
 async function readMemo() {
   console.log("\n");
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, title, created_at FROM memos ORDER BY created_at DESC"
+    );
+    if (rows.length === 0) {
+      console.log("저장된 메모가 없습니다.");
+      mainMenu();
+      return;
+    }
+    console.log("==== 메모 목록 ====");
+    rows.forEach((row) => {
+      console.log(`${row.id}. ${row.title} (${row.created_at})`);
+    });
+  } catch (err) {
+    console.error("메모 목록을 가져오는 중 오류가 발생했습니다:", err);
+  }
   rl.question("읽을 메모 번호(ID)를 입력하세요: ", async (id) => {
     const memoId = parseInt(id);
     if (isNaN(memoId)) {
